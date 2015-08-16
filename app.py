@@ -1,4 +1,4 @@
-import jsonify
+import json
 import Queue
 import time
 
@@ -17,6 +17,7 @@ following = Queue.Queue()
 following_count = 0
 
 past_tweet_ids = []
+last_dm_id = ''
 
 while True:
     tweets = api.search(string_to_search)
@@ -25,7 +26,7 @@ while True:
         print 'Retweeting ' + str(tweet_id)
         api.retweet(tweet_id)
         if 'follow' in tweet_id_dict.get(tweet_id).text:
-            user_id_to_follow = jsonify(tweet_id_dict.get(tweet_id)._json)['id_str']
+            user_id_to_follow = json(tweet_id_dict.get(tweet_id)._json)['id_str']
             api.create_friendship(user_id_to_follow, True)
             if following_count > 1500:
                 user_id_to_unfollow = following.get()
@@ -33,5 +34,10 @@ while True:
                 following_count = following_count - 1
             following.put(user_id_to_follow)
             following_count = following_count + 1
+        time.sleep(60)
+        direct_messages = api.direct_messages(since_id=last_dm_id)
+        if direct_messages not None:
+            print 'Check your direct messages!'
+            last_dm_id=direct_messages.last().id
         time.sleep(60)
     past_tweet_ids = past_tweet_ids + tweet_id_dict.keys()
